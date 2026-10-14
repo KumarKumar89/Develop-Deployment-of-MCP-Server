@@ -86,8 +86,14 @@ fn is_valid_domain(domain: &str) -> bool {
     domain.split('.').all(|label| {
         !label.is_empty()
             && label.len() <= 63
-            && label.as_bytes().first().is_some_and(u8::is_ascii_alphanumeric)
-            && label.as_bytes().last().is_some_and(u8::is_ascii_alphanumeric)
+            && label
+                .as_bytes()
+                .first()
+                .is_some_and(u8::is_ascii_alphanumeric)
+            && label
+                .as_bytes()
+                .last()
+                .is_some_and(u8::is_ascii_alphanumeric)
             && label
                 .bytes()
                 .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
@@ -147,9 +153,11 @@ mod tests {
 
     #[test]
     fn redacts_url_path_query_and_fragment() {
-        let result =
-            assess_indicator("url", "https://example.com/user/secret?token=do-not-echo#top")
-                .unwrap();
+        let result = assess_indicator(
+            "url",
+            "https://example.com/user/secret?token=do-not-echo#top",
+        )
+        .unwrap();
         assert_eq!(result.normalized, "https://example.com/");
         assert!(!result.normalized.contains("do-not-echo"));
     }

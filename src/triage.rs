@@ -87,7 +87,7 @@ pub fn triage_alert(args: AlertArgs) -> Result<AlertTriage, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{AlertArgs, triage_alert};
+    use super::{triage_alert, AlertArgs};
 
     fn sample(severity: &str) -> AlertArgs {
         AlertArgs {

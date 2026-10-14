@@ -3,24 +3,24 @@ mod triage;
 
 use std::{env, net::SocketAddr, sync::Arc};
 
-use anyhow::{Context, bail};
+use anyhow::{bail, Context};
 use axum::{
-    Json, Router,
     body::Body,
     extract::{Request, State},
-    http::{StatusCode, header},
+    http::{header, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Response},
     routing::get,
+    Json, Router,
 };
 use rmcp::{
-    ErrorData as McpError, ServiceExt, ServerHandler, schemars, tool, tool_handler,
-    tool_router,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
+    schemars, tool, tool_handler, tool_router,
     transport::stdio,
     transport::streamable_http_server::{
-        StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
+        session::local::LocalSessionManager, StreamableHttpServerConfig, StreamableHttpService,
     },
+    ErrorData as McpError, ServerHandler, ServiceExt,
 };
 use serde::Deserialize;
 use serde_json::json;
@@ -61,7 +61,9 @@ struct HashTextArgs {
 
 #[tool_router]
 impl SecurityMcp {
-    #[tool(description = "Return the server's defensive-security operating boundaries and a high-level baseline checklist. Read-only; this tool does not inspect the host or change systems.")]
+    #[tool(
+        description = "Return the server's defensive-security operating boundaries and a high-level baseline checklist. Read-only; this tool does not inspect the host or change systems."
+    )]
     fn get_security_baseline(&self) -> String {
         json!({
             "service": "cybersecurity-mcp-server",
@@ -83,7 +85,9 @@ impl SecurityMcp {
         }).to_string()
     }
 
-    #[tool(description = "Perform syntax-only validation and safe normalization of an IP address, domain, HTTP(S) URL, or SHA-256 digest. Does not resolve DNS, visit URLs, query reputation services, or attribute activity.")]
+    #[tool(
+        description = "Perform syntax-only validation and safe normalization of an IP address, domain, HTTP(S) URL, or SHA-256 digest. Does not resolve DNS, visit URLs, query reputation services, or attribute activity."
+    )]
     fn assess_indicator(
         &self,
         Parameters(args): Parameters<IndicatorArgs>,
@@ -94,7 +98,9 @@ impl SecurityMcp {
             .unwrap_or_else(|_| "{\"error\":\"response serialization failed\"}".to_string()))
     }
 
-    #[tool(description = "Provide defensive triage guidance for a security alert using its stated severity and metadata. No live detections, automatic containment, account changes, or other actions are performed. Treat the output as analyst decision support.")]
+    #[tool(
+        description = "Provide defensive triage guidance for a security alert using its stated severity and metadata. No live detections, automatic containment, account changes, or other actions are performed. Treat the output as analyst decision support."
+    )]
     fn triage_security_alert(
         &self,
         Parameters(args): Parameters<triage::AlertArgs>,
@@ -105,10 +111,15 @@ impl SecurityMcp {
             .unwrap_or_else(|_| "{\"error\":\"response serialization failed\"}".to_string()))
     }
 
-    #[tool(description = "Compute a SHA-256 digest of supplied text for evidence-integrity workflows. Input is limited to 8 KiB and is not stored or logged. This does not hash files on the host.")]
+    #[tool(
+        description = "Compute a SHA-256 digest of supplied text for evidence-integrity workflows. Input is limited to 8 KiB and is not stored or logged. This does not hash files on the host."
+    )]
     fn sha256_text(&self, Parameters(args): Parameters<HashTextArgs>) -> Result<String, McpError> {
         if args.text.len() > 8192 {
-            return Err(McpError::invalid_params("text must not exceed 8192 bytes", None));
+            return Err(McpError::invalid_params(
+                "text must not exceed 8192 bytes",
+                None,
+            ));
         }
         let digest = Sha256::digest(args.text.as_bytes());
         Ok(json!({
@@ -116,7 +127,8 @@ impl SecurityMcp {
             "digest_hex": hex::encode(digest),
             "input_bytes": args.text.len(),
             "stored": false
-        }).to_string())
+        })
+        .to_string())
     }
 }
 
@@ -192,14 +204,15 @@ async fn run_http() -> anyhow::Result<()> {
         StreamableHttpServerConfig::default().with_json_response(true),
     );
 
-    let protected_routes = Router::new()
-        .nest_service("/mcp", service)
-        .route_layer(middleware::from_fn_with_state(
-            AuthState {
-                expected_token: Arc::<str>::from(token),
-            },
-            require_bearer_token,
-        ));
+    let protected_routes =
+        Router::new()
+            .nest_service("/mcp", service)
+            .route_layer(middleware::from_fn_with_state(
+                AuthState {
+                    expected_token: Arc::<str>::from(token),
+                },
+                require_bearer_token,
+            ));
 
     let app = Router::new()
         .route("/healthz", get(healthz))
@@ -233,7 +246,10 @@ fn init_tracing() {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     init_tracing();
-    match env::var("MCP_TRANSPORT").unwrap_or_else(|_| "stdio".to_string()).as_str() {
+    match env::var("MCP_TRANSPORT")
+        .unwrap_or_else(|_| "stdio".to_string())
+        .as_str()
+    {
         "stdio" => run_stdio().await,
         "http" => run_http().await,
         other => bail!("unsupported MCP_TRANSPORT '{other}'; use 'stdio' or 'http'"),
