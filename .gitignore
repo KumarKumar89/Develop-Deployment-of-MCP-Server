@@ -1,0 +1,12 @@
+/target/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+Cargo.lock.bak
