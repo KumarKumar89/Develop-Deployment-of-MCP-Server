@@ -4,23 +4,21 @@
 FROM rust:1.88-slim-bookworm AS builder
 WORKDIR /build
 
-# Install minimal build deps (rarely needed for pure-Rust crates, but safe).
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Cache dependency compilation: copy manifests first, create a dummy src,
-# then build deps only. Real sources overwrite the dummy later.
-COPY Cargo.toml Cargo.lock ./
-RUN mkdir src && echo 'fn main() {}' > src/main.rs \
-    && cargo build --release --locked \
-    && rm -rf src
-
+# Prefer locked builds when Cargo.lock is present.
+COPY Cargo.toml ./
+COPY Cargo.lock* ./
 COPY src ./src
-# Touch so cargo notices source change even if mtime is identical in some contexts.
-RUN touch src/main.rs \
-    && cargo build --release --locked \
+
+RUN if [ -f Cargo.lock ]; then \
+      cargo build --release --locked; \
+    else \
+      cargo build --release; \
+    fi \
     && strip /build/target/release/cybersecurity-mcp-server
 
 # ---- runtime ----
