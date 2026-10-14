@@ -1,0 +1,21 @@
+{
+  "name": "Cybersecurity MCP Server",
+  "image": "mcr.microsoft.com/devcontainers/rust:1-1-bookworm",
+  "features": {},
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "rust-analyzer.check.command": "clippy"
+      }
+    }
+  },
+  "postCreateCommand": "rustup component add rustfmt clippy && cargo generate-lockfile",
+  "forwardPorts": [8080],
+  "remoteUser": "vscode"
+}

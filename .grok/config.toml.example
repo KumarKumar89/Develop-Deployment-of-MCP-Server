@@ -1,0 +1,8 @@
+# Example Grok Build remote MCP configuration.
+# Copy to your local Grok config and replace placeholders. Never commit real tokens.
+
+[[mcp_servers]]
+name = "cybersecurity-mcp-server"
+transport = "http"
+url = "https://YOUR_DOMAIN/mcp"
+headers = { Authorization = "Bearer YOUR_TOKEN" }
