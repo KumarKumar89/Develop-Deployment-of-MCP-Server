@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -36,11 +36,23 @@ jobs:
           shared-key: "ci"
 
       - name: Ensure Cargo.lock exists
+        id: lock
         run: |
           if [ ! -f Cargo.lock ]; then
             cargo generate-lockfile
-            echo "NOTE: Cargo.lock was generated in CI; commit it for reproducible builds."
+            echo "generated=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "generated=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Commit Cargo.lock when generated on main
+        if: steps.lock.outputs.generated == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Cargo.lock
+          git commit -m "chore: add Cargo.lock for reproducible builds" || exit 0
+          git push
 
       - name: Verify formatting
         run: cargo fmt --all -- --check
@@ -68,8 +80,7 @@ jobs:
       - name: Ensure Cargo.lock for Docker build
         run: |
           if [ ! -f Cargo.lock ]; then
-            # Docker builder image has cargo; generate a lock for COPY
-            docker run --rm -v "$PWD":/app -w /app rust:1.88-slim-bookworm cargo generate-lockfile
+            cargo generate-lockfile || true
           fi
 
       - name: Set up Docker Buildx
