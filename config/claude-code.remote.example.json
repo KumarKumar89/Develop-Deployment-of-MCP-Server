@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "cybersecurity-mcp-server": {
+      "url": "https://YOUR_DOMAIN/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    }
+  }
+}
